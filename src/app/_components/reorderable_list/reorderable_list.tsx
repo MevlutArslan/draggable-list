@@ -28,8 +28,6 @@ export function ReorderableList() {
 
   function onDragStart(e: DragEvent, index: number) {
     e.dataTransfer.setData('text/plain', index.toString());
-    e.dataTransfer.effectAllowed = "none"
-    e.dataTransfer.dropEffect = "none"
 
     setDraggedIndex(index);
     
