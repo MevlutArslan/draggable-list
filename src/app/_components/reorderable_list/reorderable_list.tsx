@@ -25,7 +25,6 @@ export function ReorderableList() {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const dragPreviewRef = useRef<HTMLDivElement>(null);
-  const invisibleDragImage = useRef<HTMLDivElement>(null);
 
   function onDragStart(e: DragEvent, index: number) {
     e.dataTransfer.setData('text/plain', index.toString());
