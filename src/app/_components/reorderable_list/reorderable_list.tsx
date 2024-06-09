@@ -1,7 +1,8 @@
 "use client";
-import React, { useState, DragEvent } from 'react'
+import React, { useState, DragEvent, useRef } from 'react'
 import ReorderableListRow from './reorderable_list_row';
 import { nanoid } from "nanoid";
+import ReorderableListRowPreview from './reorderable_list_row_preview';
 
 export interface TravelCardData {
   id: string,
@@ -20,53 +21,66 @@ const example_list_data: TravelCardData[] = [
 ];
 
 export function ReorderableList() {
-  const [list, setList] = useState(example_list_data)
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+  const [list, setList] = useState(example_list_data);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const dragPreviewRef = useRef<HTMLDivElement>(null);
+  const invisibleDragImage = useRef<HTMLDivElement>(null);
 
   function onDragStart(e: DragEvent, index: number) {
-    e.dataTransfer.setData('text/plain', index.toString())
+    e.dataTransfer.setData('text/plain', index.toString());
+    e.dataTransfer.effectAllowed = "none"
+    e.dataTransfer.dropEffect = "none"
+
+    setDraggedIndex(index);
+    
+    if (dragPreviewRef.current) {
+      e.dataTransfer.setDragImage(dragPreviewRef.current, 0, 0);
+    }
   }
 
   function onDragOver(e: DragEvent, index: number) {
-    e.preventDefault()
-    setHoveredIndex(index)
-    // console.log("Dragging Over Element:", e.target)
+    e.preventDefault();
+    setHoveredIndex(index);
   }
 
   function onDrop(e: DragEvent<Element>, index: number) {
-    const droppedItemIndex: number = parseInt(e.dataTransfer.getData('text'))
+    const droppedItemIndex: number = parseInt(e.dataTransfer.getData('text'));
     if (index === droppedItemIndex) {
-      // item has been dropped at its original position, do nothing.
-      return
+      return;
     }
 
     setList((prevList: TravelCardData[]) => {
-      const itemBeingDragged = prevList[droppedItemIndex]
-      const newList = [...prevList]
+      const itemBeingDragged = prevList[droppedItemIndex];
+      const newList = [...prevList];
 
-      // remove the dragged item from the list
-      newList.splice(droppedItemIndex, 1)
-      // insert the itemBeingDragged at the dropped index
-      newList.splice(index, 0, itemBeingDragged)
+      newList.splice(droppedItemIndex, 1);
+      newList.splice(index, 0, itemBeingDragged);
 
-      return newList
-    })
+      return newList;
+    });
 
-    setHoveredIndex(null)
+    setHoveredIndex(null);
+    setDraggedIndex(null);
   }
 
   return (
     <div className="flex flex-col max-h-[90%] w-full sm:w-2/3 md:w-1/2 lg:w-1/3 overflow-y-auto border border-black rounded-lg">
-      {list.map((travelCardData, index) => (
-          <ReorderableListRow
-          key={travelCardData.id}
-            travelCardData={travelCardData}
-            onDragStart={(e) => onDragStart(e, index)}
-            onDragOver={(e) => onDragOver(e, index)}
-            onDrop={(e: DragEvent<Element>) => onDrop(e, index)}
-            isHoveredOn={hoveredIndex === index}
-          />
-        ))}
+    <div ref={dragPreviewRef} style={{ position: 'absolute', top: '-10000px', left: '-10000px' }}>
+      {draggedIndex !== null && <ReorderableListRowPreview travelCardData={list[draggedIndex]} />}
     </div>
-  )
+
+    {list.map((travelCardData, index) => (
+      <React.Fragment key={travelCardData.id}>
+        <ReorderableListRow
+          travelCardData={travelCardData}
+          onDragStart={(e) => onDragStart(e, index)}
+          onDragOver={(e) => onDragOver(e, index)}
+          onDrop={(e: DragEvent<Element>) => onDrop(e, index)}
+          isHoveredOn={hoveredIndex === index}
+        />
+      </React.Fragment>
+    ))}
+  </div>
+  );
 }
